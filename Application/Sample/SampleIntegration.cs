@@ -2,6 +2,8 @@
 using Models;
 using System;
 using System.Collections.Generic;
+using HtmlAgilityPack;
+using System.Linq;
 
 namespace Application.Sample
 {
@@ -19,8 +21,8 @@ namespace Application.Sample
             EntriesComparer = equalityComparer;
             WebPage = new WebPage
             {
-                Url = "http://sampleUrl.org",
-                Name = "Sample WebSite Integration",
+                Url = "https://nieruchomosci.bazos.pl/ogloszenia/214435/2-pokoje-praga-polnoc.php",
+                Name = "Bazos Integration",
                 WebPageFeatures = new WebPageFeatures
                 {
                     HomeSale = false,
@@ -33,6 +35,26 @@ namespace Application.Sample
 
         public Dump GenerateDump()
         {
+            
+            HtmlWeb web = new HtmlWeb();
+            HtmlDocument doc = web.Load(WebPage.Url);
+
+            var node = doc.DocumentNode.SelectNodes("//td[@class=\"listadvlevo\"]").First();
+            var bnode = node.SelectSingleNode("//td");
+            var anode = bnode.SelectNodes("//b").First();
+            Console.WriteLine(anode.InnerText);
+
+            //var name = node.SelectNodes("//b").First().InnerText;
+            //var nodes = doc.DocumentNode.ChildNodes;
+            //foreach(HtmlAgilityPack.HtmlNode node in nodes)
+            //{
+            //    var infoTable = node.SelectSingleNode("//td[@class=\"listadvlevo\"]");
+            //    var bnode = infoTable.SelectSingleNode("./b");
+            //    var anode = bnode.SelectSingleNode("./a");
+            //    Console.WriteLine(anode.InnerText);
+            //}
+
+
             var random = new Random();
             var randomValue = random.Next() % 10;
             //Tutaj w normalnej sytuacji musimy ściągnąć dane z konkretnej strony, przeparsować je i dopiero wtedy zapisać do modelu Dump
