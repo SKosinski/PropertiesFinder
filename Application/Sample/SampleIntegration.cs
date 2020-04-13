@@ -52,58 +52,111 @@ namespace Application.Sample
 
             foreach (var page in pages)
             {
-                Dictionary<string, string> info = new Dictionary<string, string>();
+                Dictionary<string, string> info = CreateDictionary();
+
                 doc = web.Load(page);
                 InfoExtracter.ExtractInfoFromPropertyPage(info, doc);
+                decimal ppm = 0;
+                PolishCity city;
+                
+                if(Enum.IsDefined(typeof(PolishCity), info["City"]))
+                {
+                    city = (PolishCity)System.Enum.Parse(typeof(PolishCity), info["City"].ToUpper());
+                }
+                else
+                {
+                    city = 0;
+                }
+
+                if (info["Area"] != "0")
+                {
+                    ppm = Convert.ToDecimal(info["TotalGrossPrice"]) / Convert.ToDecimal(info["Area"]);
+                }
+                else
+                {
+                    ppm = 0;
+                }
 
                 Entry entry = new Entry
                 {
 
-                    //OfferDetails = new OfferDetails
-                    //{
-                    //    Url = page,
-                    //    CreationDateTime = DateTime.Now,
-                    //    LastUpdateDateTime = null,
-                    //    OfferKind = OfferKind.RENTAL,
-                    //    SellerContact = new SellerContact
-                    //    {
-                    //        Email = null,
-                    //        Name = info[0],
-                    //        Telephone = info[1]
-                    //    },
+                    OfferDetails = new OfferDetails
+                    {
+                        Url = page,
+                        CreationDateTime = DateTime.Now,
+                        LastUpdateDateTime = null,
+                        OfferKind = OfferKind.RENTAL,
+                        SellerContact = new SellerContact
+                        {
+                            Email = null,
+                            Name = info["Name"],
+                            Telephone = info["Telephone"]
+                        },
 
-                    //    IsStillValid = true
-                    //},
-                    //PropertyFeatures = new PropertyFeatures
-                    //{
-                    //    GardenArea = null,
-                    //    Balconies = null,
-                    //    BasementArea = null,
-                    //    OutdoorParkingPlaces = null,
-                    //    IndoorParkingPlaces = null,
-                    //},
-                    //PropertyAddress = new PropertyAddress
-                    //{
-                    //    City = null,
-                    //    District = null,
-                    //    StreetName = null,
-                    //    DetailedAddress = null,
-                    //},
-                    //PropertyPrice = new PropertyPrice
-                    //{
-                    //    TotalGrossPrice = null,
-                    //    PricePerMeter = null,
-                    //    ResidentalRent = null,
-                    //},
-
-                    //RawDescription = "Kup Teraz!"
+                        IsStillValid = true
+                    },
+                    PropertyDetails = new PropertyDetails
+                    {
+                        Area = Convert.ToDecimal(info["Area"]),
+                        NumberOfRooms = Convert.ToInt32(info["NumberOfRooms"]),
+                        FloorNumber = Convert.ToInt32(info["FloorNumber"]),
+                        YearOfConstruction = Convert.ToInt32(info["YearOfConstruction"]),
+                    },
+                    PropertyFeatures = new PropertyFeatures
+                    {
+                        GardenArea = Convert.ToDecimal(info["GardenArea"]),
+                        Balconies = Convert.ToInt32(info["Balconies"]),
+                        BasementArea = Convert.ToDecimal(info["BasementArea"]),
+                        OutdoorParkingPlaces = Convert.ToInt32(info["OutdoorParkingPlaces"]),
+                        IndoorParkingPlaces = Convert.ToInt32(info["IndoorParkingPlaces"]),
+                    },
+                    PropertyAddress = new PropertyAddress
+                    {
+                        City = city,
+                        District = null,
+                        StreetName = info["StreetName"],
+                        DetailedAddress = info["DetailedAddress"],
+                    },
+                    PropertyPrice = new PropertyPrice
+                    {
+                        TotalGrossPrice = Convert.ToDecimal(info["TotalGrossPrice"]),
+                        PricePerMeter = ppm,
+                        ResidentalRent = Convert.ToInt32(info["ResidentalRent"]),
+                    },
+                    RawDescription = info["RawDescription"]
                 };
+
                 dumpEntries.Add(entry);
             }
             dump.Entries = dumpEntries;
 
             return dump;
+        }
 
+        private static Dictionary<string, string> CreateDictionary()
+        {
+            Dictionary<string, string> info = new Dictionary<string, string>();
+            info = new Dictionary<string, string>
+            {
+                {"City", "0"},
+                {"LastUpdateDateTime", "0"},
+                {"Email", "0"},
+                {"Area", "0"},
+                {"NumberOfRooms", "0"},
+                {"FloorNumber", "0"},
+                {"YearOfConstruction", "0"},
+                {"GardenArea", "0"},
+                {"Balconies", "0"},
+                {"BasementArea", "0"},
+                {"OutdoorParkingPlaces", "0"},
+                {"IndoorParkingPlaces", "0"},
+                {"District", "Nieznany"},
+                {"StreetName", "Nieznany"},
+                {"TotalGrossPrice", "0"},
+                {"PricePerMeter", "0"},
+                {"ResidentalRent", "0"},
+            };
+            return info;
         }
 
         private static void GetAllPropertyPages(List<string> pages, HtmlDocument doc)

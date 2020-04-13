@@ -5,7 +5,7 @@
         /// <summary>
         /// Nazwa miasta. Nie wymagane jeżeli posesja stoi we wsi
         /// </summary>
-        public PolishCity City { get; set; }
+        public PolishCity? City { get; set; }
 
         
         /// <summary>
