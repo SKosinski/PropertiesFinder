@@ -24,6 +24,7 @@ namespace Application.Sample
             {
                 ExtractInnerText(dataInfo, listInfo);
             }
+
             char[] separators = { ' ', '.', ',', '!', '?', '-' };
             var description = listInfo[0].Split(separators);
             List<string> descList = description.ToList<string>();
@@ -40,7 +41,7 @@ namespace Application.Sample
                 }
             }
 
-            //prevention from going out of range 
+            //Zapobiegami wychodzeniu poza range na liście z wyrazami z opisu
             descList.Insert(0, "Start");
             descList.Add("End");
             ExtractInfoFromDescription(info, descList);
@@ -51,6 +52,7 @@ namespace Application.Sample
             int rent = 0;
             bool roomInfo = false;
 
+            //Dla każego wyrazu sprawdzamy czy nie wpisuje się w daną informację
             for (int i = 0; i < descList.Count; i++)
             {
                 //GardenArea
@@ -215,7 +217,7 @@ namespace Application.Sample
                 info["TotalGrossPrice"] = totalGrossPrice;
         }
 
-        private static string ChangePolishCharacters(string s)
+        private static string ChangePolishCharacters(string s) //Usuwanie polskich znaków z nazwy miasta
         {
             s = s.ToUpper();
             string[,] exchangeableChar = 

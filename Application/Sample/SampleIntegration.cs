@@ -9,6 +9,21 @@ namespace Application.Sample
 {
     public class SampleIntegration : IWebSiteIntegration
     {
+        /*
+         * Zmiany:
+         * 
+         * na stronie bazos jedynymi informacjami gwarantowanymi dla ogłoszenią są:
+         * - Imię właściciela
+         * - Telefon Właściciela
+         * - Miasto z numerem pocztowym
+         * 
+         * Reszta informacji może zawierać się jedynie w opisie ogłoszenia, ale nie musi
+         * W związku z tym słownik w którym umieszczam wyciągnięte informacje ze strony posiada domyslne wartości (tworzone w CreateDictionary)
+         * Gdyż takie nienullowalne wartości jak Area, NumberOfRooms czy StreetName niekoniecznie znajdują się w opisie.
+         * 
+         * Dodałem również miasto "NIEZNANY" w razie gdyby miasto podane przez właściciela nie znajdowało się na liście
+         * 
+         */
         public WebPage WebPage { get; }
         public IDumpsRepository DumpsRepository { get; }
 
@@ -49,14 +64,14 @@ namespace Application.Sample
             };
 
             List<Entry> dumpEntries = new List<Entry>();
-
+            // Dla każdego ogłoszenia ze strony głównej tworzymy nowe Entry i dodajemy do Dumpa
             foreach (var page in pages)
             {
                 Dictionary<string, string> info = CreateDictionary();
 
                 doc = web.Load(page);
                 InfoExtracter.ExtractInfoFromPropertyPage(info, doc);
-                decimal ppm = 0;
+                decimal ppm;
                 PolishCity city;
                 
                 if(Enum.IsDefined(typeof(PolishCity), info["City"]))
@@ -159,7 +174,7 @@ namespace Application.Sample
             return info;
         }
 
-        private static void GetAllPropertyPages(List<string> pages, HtmlDocument doc)
+        private static void GetAllPropertyPages(List<string> pages, HtmlDocument doc) //Zbieramy linki wszystkich ogłoszeń ze strony głównej
         {
             var pagesNodes = doc.DocumentNode.SelectNodes("//span[@class=\"nadpis\"]");
             foreach (HtmlNode node in pagesNodes)
