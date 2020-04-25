@@ -162,7 +162,14 @@ namespace Application.Sample
             }
             string creationDate = "";
             if(listInfo.Count>2)
+            {
                 creationDate = listInfo[2];
+                if(listInfo[2]=="TOP")
+                {
+                    creationDate = listInfo[3];
+                }
+            }
+
             else
                 creationDate = listInfo[0];
 
