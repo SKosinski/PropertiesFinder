@@ -11,6 +11,6 @@ namespace Models
         /// Kolekcja reprezentująca wszystkie oferty znalezione podczas zrzutu. Te dane powinny zostać pobrane automatycznie
         /// za pomocą parsera.
         /// </summary>
-        public List<Entry> Entries { get; set; }
+        public IEnumerable<Entry> Entries { get; set; }
     }
 }

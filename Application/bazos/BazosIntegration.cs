@@ -4,10 +4,11 @@ using System;
 using System.Collections.Generic;
 using HtmlAgilityPack;
 using System.Linq;
+using System.Threading;
 
 namespace Application.Sample
 {
-    public class SampleIntegration : IWebSiteIntegration
+    public class BazosIntegration : IWebSiteIntegration
     {
         /*
          * Zmiany:
@@ -29,19 +30,19 @@ namespace Application.Sample
 
         public IEqualityComparer<Entry> EntriesComparer { get; }
 
-        public SampleIntegration(IDumpsRepository dumpsRepository,
+        public BazosIntegration(IDumpsRepository dumpsRepository,
             IEqualityComparer<Entry> equalityComparer)
         {
             DumpsRepository = dumpsRepository;
             EntriesComparer = equalityComparer;
             WebPage = new WebPage
             {
-                Url = "https://nieruchomosci.bazos.pl/wynajem/mieszkania/",
+                Url = "https://nieruchomosci.bazos.pl/",
                 Name = "Bazos Integration",
                 WebPageFeatures = new WebPageFeatures
                 {
-                    HomeSale = false,
-                    HomeRental = false,
+                    HomeSale = true,
+                    HomeRental = true,
                     HouseSale = false,
                     HouseRental = false
                 }
@@ -52,8 +53,12 @@ namespace Application.Sample
         {
             List<string> pages = new List<string>();
             HtmlWeb web = new HtmlWeb();
-            HtmlDocument doc = web.Load(WebPage.Url);
-            GetAllPropertyPages(pages, doc);
+            string url = WebPage.Url + "wynajem/mieszkania/";
+            HtmlDocument doc = web.Load(url);
+            GetAllPages(pages, doc, url);
+            url = WebPage.Url + "sprzedaz/mieszkania/";
+            doc = web.Load(url);
+            GetAllPages(pages, doc, url);
             //Tutaj w normalnej sytuacji musimy ściągnąć dane z konkretnej strony, przeparsować je i dopiero wtedy zapisać do modelu Dump
 
             var dump = new Dump()
@@ -92,6 +97,16 @@ namespace Application.Sample
                     ppm = 0;
                 }
 
+                OfferKind offer;
+                if(info["Rental"] == "WYNAJEM")
+                {
+                    offer = OfferKind.RENTAL;
+                }
+                else
+                {
+                    offer = OfferKind.SALE;
+                }
+
                 Entry entry = new Entry
                 {
 
@@ -100,10 +115,10 @@ namespace Application.Sample
                         Url = page,
                         CreationDateTime = DateTime.Now,
                         LastUpdateDateTime = null,
-                        OfferKind = OfferKind.RENTAL,
+                        OfferKind = offer,
                         SellerContact = new SellerContact
                         {
-                            Email = null,
+                            Email = info["Email"],
                             Name = info["Name"],
                             Telephone = info["Telephone"]
                         },
@@ -128,7 +143,7 @@ namespace Application.Sample
                     PropertyAddress = new PropertyAddress
                     {
                         City = city,
-                        District = null,
+                        District = info["District"],
                         StreetName = info["StreetName"],
                         DetailedAddress = info["DetailedAddress"],
                     },
@@ -150,12 +165,13 @@ namespace Application.Sample
 
         private static Dictionary<string, string> CreateDictionary()
         {
+            //Dodajemy podstawowe informacje, gdy zmienna w modelu jest non-nullable
             Dictionary<string, string> info = new Dictionary<string, string>();
             info = new Dictionary<string, string>
             {
                 {"City", "0"},
                 {"LastUpdateDateTime", "0"},
-                {"Email", "0"},
+                {"Email", "Nieznany"},
                 {"Area", "0"},
                 {"NumberOfRooms", "0"},
                 {"FloorNumber", "0"},
@@ -174,8 +190,28 @@ namespace Application.Sample
             return info;
         }
 
-        private static void GetAllPropertyPages(List<string> pages, HtmlDocument doc) //Zbieramy linki wszystkich ogłoszeń ze strony głównej
+
+        private static void GetAllPages(List<string> pages, HtmlDocument doc, string url)
         {
+            //Znajdujemy informację o ilości ogłoszeń, dzielimy to przez liczbę ogłoszeń na stronę, dostajemy liczbę wszystkich stron z których należy ściągać informacje
+            var node = doc.DocumentNode.SelectSingleNode("//table[@class=\"listainzerat\"]");
+            var children = node.ChildNodes;
+            List<string> pageNumberInfo = new List<string>();
+            InfoExtracter.ExtractInnerText(children, pageNumberInfo);
+            string tempPageNumber = pageNumberInfo[1].Replace(" Wyświetlono 1-20 ogłoszeń z ", string.Empty);
+            tempPageNumber = tempPageNumber.Replace(" ", string.Empty);
+            var pageNumber = Convert.ToInt32(tempPageNumber) / 20;
+            for (int i = 0; i < pageNumber + 1; i++) // pageNumber +
+            {
+                HtmlWeb webNew = new HtmlWeb();
+                HtmlDocument docNew = webNew.Load(url + i*20 + "/");
+                GetAllPropertyPages(pages, docNew);
+            }
+        }
+
+        private static void GetAllPropertyPages(List<string> pages, HtmlDocument doc) 
+        {
+            //Zbieramy linki wszystkich ogłoszeń ze strony głównej
             var pagesNodes = doc.DocumentNode.SelectNodes("//span[@class=\"nadpis\"]");
             foreach (HtmlNode node in pagesNodes)
             {
